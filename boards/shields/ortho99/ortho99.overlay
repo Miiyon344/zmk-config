@@ -1,5 +1,6 @@
 #include <dt-bindings/zmk/matrix_transform.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
     kscan0: kscan0 {
@@ -7,11 +8,38 @@
         diode-direction = "col2row";
         wakeup-source;
 
+        /*
+         * COL0      = XIAO D8
+         * COL1-8    = MCP23017 GPA0-7
+         * COL9-16   = MCP23017 GPB0-7
+         * COL17     = XIAO D9
+         */
         col-gpios
             = <&xiao_d 8 GPIO_ACTIVE_HIGH>
+            , <&mcp23017 0 GPIO_ACTIVE_HIGH>
+            , <&mcp23017 1 GPIO_ACTIVE_HIGH>
+            , <&mcp23017 2 GPIO_ACTIVE_HIGH>
+            , <&mcp23017 3 GPIO_ACTIVE_HIGH>
+            , <&mcp23017 4 GPIO_ACTIVE_HIGH>
+            , <&mcp23017 5 GPIO_ACTIVE_HIGH>
+            , <&mcp23017 6 GPIO_ACTIVE_HIGH>
+            , <&mcp23017 7 GPIO_ACTIVE_HIGH>
+            , <&mcp23017 8 GPIO_ACTIVE_HIGH>
+            , <&mcp23017 9 GPIO_ACTIVE_HIGH>
+            , <&mcp23017 10 GPIO_ACTIVE_HIGH>
+            , <&mcp23017 11 GPIO_ACTIVE_HIGH>
+            , <&mcp23017 12 GPIO_ACTIVE_HIGH>
+            , <&mcp23017 13 GPIO_ACTIVE_HIGH>
+            , <&mcp23017 14 GPIO_ACTIVE_HIGH>
+            , <&mcp23017 15 GPIO_ACTIVE_HIGH>
             , <&xiao_d 9 GPIO_ACTIVE_HIGH>
             ;
 
+        /*
+         * ROW0-3 = XIAO D0-D3
+         * ROW4   = XIAO D6
+         * ROW5   = XIAO D7
+         */
         row-gpios
             = <&xiao_d 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
             , <&xiao_d 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
@@ -22,30 +50,58 @@
             ;
     };
 
+    /*
+     * 今回だけのMCP23017動作確認用transform。
+     *
+     * A = ROW0/COL0   XIAO直結
+     * B = ROW0/COL1   MCP GPA0
+     * C = ROW0/COL8   MCP GPA7
+     * D = ROW0/COL9   MCP GPB0
+     * E = ROW1/COL16  MCP GPB7
+     * F = ROW1/COL17  XIAO直結
+     *
+     * 実際にキーが存在する座標だけ選択しています。
+     */
     default_transform: keymap_transform0 {
         compatible = "zmk,matrix-transform";
-
         rows = <6>;
-        columns = <2>;
+        columns = <18>;
 
         map = <
-            RC(0,0) RC(0,1)
-            RC(1,0) RC(1,1)
-            RC(2,0) RC(2,1)
-            RC(3,0) RC(3,1)
-            RC(4,0) RC(4,1)
-            RC(5,0) RC(5,1)
+            RC(0,0)
+            RC(0,1)
+            RC(0,8)
+            RC(0,9)
+            RC(1,16)
+            RC(1,17)
         >;
     };
 
-    physical_layout0: physical_layout_0 {
-        compatible = "zmk,physical-layout";
-        display-name = "Default";
-        kscan = <&kscan0>;
-        transform = <&default_transform>;
-    };
-
     chosen {
-        zmk,physical-layout = &physical_layout0;
+        zmk,kscan = &kscan0;
+        zmk,matrix-transform = &default_transform;
+    };
+};
+
+
+/*
+ * XIAO nRF52840
+ *
+ * D4 = SDA
+ * D5 = SCL
+ */
+&xiao_i2c {
+    status = "okay";
+    clock-frequency = <I2C_BITRATE_FAST>;
+
+    mcp23017: mcp23017@20 {
+        compatible = "microchip,mcp230xx";
+        reg = <0x20>;
+
+        gpio-controller;
+        #gpio-cells = <2>;
+        ngpios = <16>;
+
+        status = "okay";
     };
 };
