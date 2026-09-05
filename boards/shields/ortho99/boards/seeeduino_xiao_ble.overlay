@@ -1,0 +1,77 @@
+#include <dt-bindings/led/led.h>
+
+/ {
+    /*
+     * TPS610997 EN
+     *
+     * XIAO Plus D11 = P0.15
+     *
+     * HIGH = 5V ON
+     * LOW  = 5V OFF
+     */
+    ext-power {
+        compatible = "zmk,ext-power-generic";
+        control-gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+    };
+
+    chosen {
+        zmk,underglow = &led_strip;
+    };
+};
+
+
+/*
+ * SK6812 DATA
+ *
+ * XIAO Plus D10 = P1.15
+ * ↓
+ * TC74VHCT04
+ * ↓
+ * SK6812MINI-E x6
+ */
+&pinctrl {
+
+    ortho99_spi3_default: ortho99_spi3_default {
+        group1 {
+            psels = <NRF_PSEL(SPIM_MOSI, 1, 15)>;
+        };
+    };
+
+    ortho99_spi3_sleep: ortho99_spi3_sleep {
+        group1 {
+            psels = <NRF_PSEL(SPIM_MOSI, 1, 15)>;
+            low-power-enable;
+        };
+    };
+};
+
+
+&spi3 {
+    compatible = "nordic,nrf-spim";
+    status = "okay";
+
+    pinctrl-0 = <&ortho99_spi3_default>;
+    pinctrl-1 = <&ortho99_spi3_sleep>;
+    pinctrl-names = "default", "sleep";
+
+    led_strip: ws2812@0 {
+        compatible = "worldsemi,ws2812-spi";
+
+        reg = <0>;
+        spi-max-frequency = <4000000>;
+
+        chain-length = <6>;
+
+        spi-one-frame = <0x70>;
+        spi-zero-frame = <0x40>;
+
+        /*
+         * SK6812MINI-E
+         * GRB order
+         */
+        color-mapping =
+            <LED_COLOR_ID_GREEN
+             LED_COLOR_ID_RED
+             LED_COLOR_ID_BLUE>;
+    };
+};
